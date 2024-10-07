@@ -1,0 +1,68 @@
+:icons: font
+ifdef::backend-pdf[]
+:title-page-background-image: image:images/Training_Cover.png[pdfwidth=8.0in,align=center]
+:pygments-style: tango
+:source-highlighter: pygments
+endif::[]
+ifndef::env-github[:icons: font]
+ifdef::env-github[]
+:status:
+:outfilesuffix: .adoc
+:caution-caption: :fire:
+:important-caption: :exclamation:
+:note-caption: :paperclip:
+:tip-caption: :bulb:
+:warning-caption: :warning:
+endif::[]
+
+= QCOW2 Image Editing
+
+These scripts allow for the editing of QCOW2 images while maintaining full SELinux labels and permissions. The scripts must be run either with `sudo` or as the `root` user. There is an interactive mode for the script if you intend to make the modifications manually, but there are also automated versions of the script to perform the *mounts* and *unmounts* when used in conjunction with automation tasks.
+
+== QCOW2 Image Edit Manual Process
+
+It is possible to manually edit a disk image for testing purposes in interactive mode in order to determine the steps needed for automation. The interactive mode can be used to fix disk images for emergency "re-release" of images, but the fixes should be backported into some type of automation. That can be done in the build process or it could be part of the export/publication process using Ansible and the Non-Interactive scripts contained as part of this utility.
+
+.Sample of Interactive Mode
+[source,bash]
+----
+[root@foundation0 kiosk]# ./qcow2_mounting_interactive.py
+Do you want to (m)ount or (u)mount the qcow2 image? Or (e)xit. <1>
+m
+Loading the nbd module.
+What is the location and name of the qcow2 file to mount? <2>
+/var/lib/libvirt/images/rh415-classroom-vda.qcow2
+Connecting the /var/lib/libvirt/images/rh415-classroom-vda.qcow2 image to a network block device.
+Mounting the partition from the VM to /vm_disc.
+Done.
+----
+<1> Interactive mode prompts for *m* for mounting, *u* to unmount, or *e* to exit and does not accept any command-line arguments
+<2> If you choose to mount an image, you will be prompted for the full path and image name.
+
+
+== QCOW2 Image Edit Automation Process
+
+To make things easier for automation the *qcow2_mounting_automated.py* and *qcow2_umounting_automated.py* scripts have been created. The process is fairly simple in that you mount the QCOW2 file by providing the name/path of the image. It will then be mounted to the `vm_disk` directory. The unmounting is simple by just executing the unmount script with no options.
+
+.Sample of Non-Interactive Mode for Mounting
+[source,bash]
+----
+[root@foundation0 kiosk]# ./qcow2_mounting_automated.py /var/lib/libvirt/images/rh415-classroom-vda.qcow2 <1>
+Loading the nbd module.
+Connecting the /var/lib/libvirt/images/rh415-classroom-vda.qcow2 image to a network block device.
+Mounting the partition from the VM to /vm_disc.
+Done.
+[root@foundation0 kiosk]# ls /vm_disc/
+afs/     boot/    dev/     etc/     lib/     media/   opt/     root/    sbin/    sys/     usr/
+bin/     content/ efi/     home/    lib64/   mnt/     proc/    run/     srv/     tmp/     var/
+----
+<1> Indicates that you are mounting */var/lib/libvirt/images/rh415-classroom-vda.qcow2*. The path and image name must be passed on the CLI.
+
+Once the image has been mounted, it can be accessed using the *vm_disk* directory and Ansible or other automation tools can be leveraged to manipulate the contents in an automated fashion. After all modifications have been completed, the disk can be unmounted with the unmount command.
+
+
+.Sample of Non-Interactive Mode for Un-Mounting
+[source,bash]
+----
+[root@foundation0 kiosk]# ./qcow2_unmounting_automated.py
+----
